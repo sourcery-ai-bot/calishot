@@ -1,0 +1,15 @@
+select uuid, json_object(
+    "href", links, "label", title
+) from summary;
+
+select uuid, title,  json_extract(links, '$[0]') from summary;
+
+
+select uuid, json_object(
+    "href", links, "label", title
+) from summary;
+
+select uuid, title, json_extract(links, '$[0]') as link, json_object(
+    "href", link, "label", title
+)
+from summary;
