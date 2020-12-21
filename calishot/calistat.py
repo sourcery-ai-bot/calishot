@@ -41,84 +41,78 @@ def get_site_db(uuid, dir):
 
 def init_site_db(site, _uuid="", dir="."):
     
-    if not _uuid:
-        s_uuid=str(uuid.uuid4())
-    else:
-        s_uuid=str(_uuid)
-
-    f_uuid=s_uuid+".db"
-    path = Path(dir) / f_uuid 
-    db = Database(path)
-
-    
-    if not "site" in db.table_names():
-        s=db["site"]
-        s.insert(
-            {    
-                "uuid": s_uuid,
-                "urls": [site],
-                "schema_version": 1
-            }
-        )
+        s_uuid = str(uuid.uuid4()) if not _uuid else str(_uuid)
+        f_uuid=s_uuid+".db"
+        path = Path(dir) / f_uuid
+        db = Database(path)
 
 
-    if not "ebooks" in db.table_names():
-        db["ebooks"].create({
-        "uuid": str,
-        "id": int,
-        "library": str,  #TODO: manage libraries ids as integer to prevent library renam on remote site  
-        "title": str,
-        "authors": str,
-        "series": str,
-        "series_index": int,
-        # "edition": int, 
-        "language": str,
-        "desc": str,
-        "identifiers": str,
-        "tags": str,
-        "publisher": str,
-        "pubdate": str,
-        "last_modified": str,
-        "timestamp": str,
-        "formats": str,
-        "cover": int,
-        # "epub": int,
-        # "mobi": int,
-        # "pdf": int,
-        # TODO: add the most common formats to avoid alter tables
-        }, pk="uuid")
-
-    if not "libraries" in db.table_names():
-        db["libraries"].create({
-        "id": int,    
-        "names": str
-        }, pk="id")
+        if "site" not in db.table_names():
+                s=db["site"]
+                s.insert(
+                    {    
+                        "uuid": s_uuid,
+                        "urls": [site],
+                        "schema_version": 1
+                    }
+                )
 
 
-        # db.table("ebooks", pk="id")
-        # db.table("ebooks", pk="id", alter=True
+        if "ebooks" not in db.table_names():
+                db["ebooks"].create({
+                "uuid": str,
+                "id": int,
+                "library": str,  #TODO: manage libraries ids as integer to prevent library renam on remote site  
+                "title": str,
+                "authors": str,
+                "series": str,
+                "series_index": int,
+                # "edition": int, 
+                "language": str,
+                "desc": str,
+                "identifiers": str,
+                "tags": str,
+                "publisher": str,
+                "pubdate": str,
+                "last_modified": str,
+                "timestamp": str,
+                "formats": str,
+                "cover": int,
+                # "epub": int,
+                # "mobi": int,
+                # "pdf": int,
+                # TODO: add the most common formats to avoid alter tables
+                }, pk="uuid")
 
-    return db
+        if "libraries" not in db.table_names():
+                db["libraries"].create({
+                "id": int,    
+                "names": str
+                }, pk="id")
+
+
+                # db.table("ebooks", pk="id")
+                # db.table("ebooks", pk="id", alter=True
+
+        return db
 
 
 def get_format_url(db, book, format):
-    url=json.loads(db['site'].get(1)['urls'])[0]
-    library=book['library']
-    id_=str(book['id'])
+        url=json.loads(db['site'].get(1)['urls'])[0]
+        library=book['library']
+        id_=str(book['id'])
 
-    f_url = url+"/get/"+format+"/"+id_+"/"+library
-    return f_url
+        return url+"/get/"+format+"/"+id_+"/"+library
     
 
     
 def get_desc_url(db, book):
-    url=json.loads(db['site'].get(1)['urls'])[0]
-    library=book['library']
-    id_=str(book['id'])
+        url=json.loads(db['site'].get(1)['urls'])[0]
+        library=book['library']
+        id_=str(book['id'])
 
-    f_urls=[]
-    d_url =url+"#book_id="+id_+"&library_id="+library+"&panel=book_details"
-    return d_url
+        f_urls=[]
+        return url+"#book_id="+id_+"&library_id="+library+"&panel=book_details"
 
 
 def save_books_metadata_from_site(db, books):
@@ -473,160 +467,160 @@ def search(query_str, dir=".", links_only=False):
 
 
 def get_stats(dir="."):
-    dbs=[]
-    size=0
-    count=0
-    for f in os.listdir(dir):
-        if not f.endswith(".db"):
-            continue
-        if f == "index.db":
-            continue
-        path = Path(dir) / f 
-        dbs.append(Database(path))
+        dbs=[]
+        size=0
+        count=0
+        for f in os.listdir(dir):
+            if not f.endswith(".db"):
+                continue
+            if f == "index.db":
+                continue
+            path = Path(dir) / f 
+            dbs.append(Database(path))
 
-    for db in dbs:
-        for i, ebook in enumerate(db["ebooks"].rows):
-            uuid=ebook['uuid']
-            title=ebook['title']
-            formats=json.loads(ebook['formats'])
-            # print(formats)
-            for f in formats:
-                if f in ebook:
-                    if ebook[f]:
-                        size+=ebook[f]
-                        count+=1
-                        # print (f'\r{count} {f} --> {uuid}: {title}', end ='')
-                        # print (f'\r{count} : {uuid} --> {f}', end='')
-                        print (f'\r{count} formats - ebook : {uuid}', end='')
+        for db in dbs:
+                for i, ebook in enumerate(db["ebooks"].rows):
+                        uuid=ebook['uuid']
+                        title=ebook['title']
+                        formats=json.loads(ebook['formats'])
+                                    # print(formats)
+                        for f in formats:
+                                if f in ebook and ebook[f]:
+                                        size+=ebook[f]
+                                        count+=1
+                                        # print (f'\r{count} {f} --> {uuid}: {title}', end ='')
+                                        # print (f'\r{count} : {uuid} --> {f}', end='')
+                                        print (f'\r{count} formats - ebook : {uuid}', end='')
 
-    print()
-    print("Total count of formats:", humanize.intcomma(count)) 
-    print("Total size:", hsize(size)) 
+        print()
+        print("Total count of formats:", humanize.intcomma(count))
+        print("Total size:", hsize(size)) 
 
 
-    print()
+        print()
 
 def init_index_db(dir="."):
     
-    path = Path(dir) / "index.db" 
-    
-    db_index = Database(path)
-    if not "summary" in db_index.table_names():
-        db_index["summary"].create({
-        "uuid": str,
-        "title": str,
-        # "source": str
-        "authors": str,
-        "year": str,
-        "series": str,
-        "language": str,
-        "links": str,
-        # "desc": str,
-        "publisher": str,
-        "tags": str,
-        "identifiers": str,
-        "formats": str
-        }
-        # )
-        , pk="uuid")
+        path = Path(dir) / "index.db" 
 
-        # db_index.table("index", pk="uuid")
-        # db_index.table("summary").enable_fts(["title"])
-        # db_index["summary"].enable_fts(["title", "authors", "series", "uuid", "language", "identifiers", "tags", "publisher", "formats", "pubdate"])
-        db_index["summary"].enable_fts(["title", "authors", "series", "language", "identifiers", "tags", "publisher", "formats", "year"])
+        db_index = Database(path)
+        if "summary" not in db_index.table_names():
+                db_index["summary"].create({
+                "uuid": str,
+                "title": str,
+                # "source": str
+                "authors": str,
+                "year": str,
+                "series": str,
+                "language": str,
+                "links": str,
+                # "desc": str,
+                "publisher": str,
+                "tags": str,
+                "identifiers": str,
+                "formats": str
+                }
+                # )
+                , pk="uuid")
 
-    return db_index
+                # db_index.table("index", pk="uuid")
+                # db_index.table("summary").enable_fts(["title"])
+                # db_index["summary"].enable_fts(["title", "authors", "series", "uuid", "language", "identifiers", "tags", "publisher", "formats", "pubdate"])
+                db_index["summary"].enable_fts(["title", "authors", "series", "language", "identifiers", "tags", "publisher", "formats", "year"])
+
+        return db_index
 
 
-def build_index (dir='.'):
+def build_index(dir='.'):
 
-    dbs=[]
-    for f in os.listdir(dir):
-        if not f.endswith(".db"):
-            continue
-        if f in ("index.db", "sites.db"):
-            continue
-        path = Path(dir) / f 
-        dbs.append(Database(path))
-    
-    db_index = init_index_db(dir=dir)
-    index_t=db_index["summary"]
+        dbs=[]
+        for f in os.listdir(dir):
+            if not f.endswith(".db"):
+                continue
+            if f in ("index.db", "sites.db"):
+                continue
+            path = Path(dir) / f 
+            dbs.append(Database(path))
 
-    batch_size=10000
-    count=0
-    summaries=[]
+        db_index = init_index_db(dir=dir)
+        index_t=db_index["summary"]
 
-    for db in dbs:
-        for i, ebook in enumerate(db["ebooks"].rows):
-            # print("ebook=", ebook)
-            if ebook['language'] == "eng":
-                continue 
-            
-            if ebook['authors']: 
-                ebook['authors']=formats=json.loads(ebook['authors'])
-            # if ebook['series']:    
-            #     ebook['series']=formats=json.loads(ebook['series'])
-            if ebook['identifiers']:
-                ebook['identifiers']=formats=json.loads(ebook['identifiers'])
-            if ebook['tags']: 
-                ebook['tags']=formats=json.loads(ebook['tags'])
-            ebook['formats']=formats=json.loads(ebook['formats'])
-            ebook['links']=""
-            summary = {k: v for k, v in ebook.items() if k in ("uuid","title", "authors", "series", "language", "formats", "tags", "publisher", "identifiers")}
-            # summary = {k: v for k, v in ebook.items() if k in ("uuid","title", "authors", "series", "identifiers", "language", "tags", "publisher", "formats")}
-            summary['title']={'href': get_desc_url(db, ebook), 'label': ebook['title']}
+        batch_size=10000
+        count=0
+        summaries=[]
 
-            formats=[]
-            for f in ebook['formats']:
-                formats.append({'href': get_format_url(db, ebook, f), 'label': f})
-            summary['links']=formats
-            
-            pubdate=ebook['pubdate'] 
-            summary['year']=pubdate[0:4] if pubdate else "" 
-            summaries.append(summary)
-            # print(summary)
-            count+=1
-            print (f"\r{count} - ebook handled: {ebook['uuid']}", end='')
+        for db in dbs:
+                for i, ebook in enumerate(db["ebooks"].rows):
+                        # print("ebook=", ebook)
+                        if ebook['language'] == "eng":
+                            continue 
 
-            if not count % batch_size:
-                # print()
-                # print(f"Saving summary by batch: {len(summaries)}")    
-                # print(summaries)
-                # index_t.upsert_all(summaries, batch_size=1000, pk='uuid')
-                # index_t.insert_all(summaries, batch_size=1000, pk='uuid')
-                try:
-                    index_t.insert_all(summaries, batch_size=batch_size)
-                except Exception as e:
-                    # dump = [(s['uuid'],s['links']) for s in summaries]
-                    # print(dump)
-                    print()
-                    print("UUID collisions. Probalbly a site duplicate")
-                    print(e)
-                    print()
+                        if ebook['authors']: 
+                            ebook['authors']=formats=json.loads(ebook['authors'])
+                        # if ebook['series']:    
+                        #     ebook['series']=formats=json.loads(ebook['series'])
+                        if ebook['identifiers']:
+                            ebook['identifiers']=formats=json.loads(ebook['identifiers'])
+                        if ebook['tags']: 
+                            ebook['tags']=formats=json.loads(ebook['tags'])
+                        ebook['formats']=formats=json.loads(ebook['formats'])
+                        ebook['links']=""
+                        summary = {k: v for k, v in ebook.items() if k in ("uuid","title", "authors", "series", "language", "formats", "tags", "publisher", "identifiers")}
+                        # summary = {k: v for k, v in ebook.items() if k in ("uuid","title", "authors", "series", "identifiers", "language", "tags", "publisher", "formats")}
+                        summary['title']={'href': get_desc_url(db, ebook), 'label': ebook['title']}
 
-                    # index_t.upsert_all(summaries, batch_size=batch_size, pk='uuid')
-                    # TODO Some ebooks could be missed. We need to compute the batch list, insert new ebooks and update the site index
+                        formats = [{
+                            'href': get_format_url(db, ebook, f),
+                            'label': f
+                        } for f in ebook['formats']]
+                        summary['links']=formats
 
-                # print("Saved")
-                # print()
-                summaries=[]
+                        pubdate=ebook['pubdate']
+                        summary['year']=pubdate[0:4] if pubdate else ""
+                        summaries.append(summary)
+                        # print(summary)
+                        count+=1
+                        print (f"\r{count} - ebook handled: {ebook['uuid']}", end='')
 
-    # print()
-    # print("saving summary")    
-    # index_t.upsert_all(summaries, batch_size=1000, pk='uuid')
-    # index_t.insert_all(summaries, batch_size=1000, pk='uuid')
-    try:
-        index_t.insert_all(summaries, batch_size=batch_size)
-    except:
-        print("sqlite3.IntegrityError: UNIQUE constraint failed: summary.uuid")
+                        if not count % batch_size:
+                            # print()
+                            # print(f"Saving summary by batch: {len(summaries)}")    
+                            # print(summaries)
+                            # index_t.upsert_all(summaries, batch_size=1000, pk='uuid')
+                            # index_t.insert_all(summaries, batch_size=1000, pk='uuid')
+                            try:
+                                index_t.insert_all(summaries, batch_size=batch_size)
+                            except Exception as e:
+                                # dump = [(s['uuid'],s['links']) for s in summaries]
+                                # print(dump)
+                                print()
+                                print("UUID collisions. Probalbly a site duplicate")
+                                print(e)
+                                print()
 
-    # print("summary done")
-    # print()
-    
-    print()
-    print("fts")
-    index_t.populate_fts(["title", "authors", "series", "identifiers", "language", "tags", "publisher", "formats", "year"])
-    print("fts done")
+                                # index_t.upsert_all(summaries, batch_size=batch_size, pk='uuid')
+                                # TODO Some ebooks could be missed. We need to compute the batch list, insert new ebooks and update the site index
+
+                            # print("Saved")
+                            # print()
+                            summaries=[]
+
+        # print()
+        # print("saving summary")    
+        # index_t.upsert_all(summaries, batch_size=1000, pk='uuid')
+        # index_t.insert_all(summaries, batch_size=1000, pk='uuid')
+        try:
+            index_t.insert_all(summaries, batch_size=batch_size)
+        except:
+            print("sqlite3.IntegrityError: UNIQUE constraint failed: summary.uuid")
+
+        # print("summary done")
+        # print()
+
+        print()
+        print("fts")
+        index_t.populate_fts(["title", "authors", "series", "identifiers", "language", "tags", "publisher", "formats", "year"])
+        print("fts done")
 
 
 if __name__ == "__main__":

@@ -41,7 +41,7 @@ def init_sites_db(dir="."):
     path = Path(dir) / "sites.db" 
 
     db = Database(path)
-    if not "sites" in db.table_names():
+    if "sites" not in db.table_names():
         db["sites"].create({
         "uuid": str,
         "url": str,
@@ -73,16 +73,15 @@ def save_site(db: Database, site):
     # # TODO: Check if the site is not alreday present
     # def save_sites(db, sites):
     #     db["sites"].insert_all(sites, alter=True,  batch_size=100)
-    if not 'uuid' in site: 
-        site['uuid']=str(uuid.uuid4())    
+    if 'uuid' not in site: 
+        site['uuid']=str(uuid.uuid4())
     print(site)
     db["sites"].upsert(site, pk='uuid')
 
 # import pysnooper
 # @pysnooper.snoop()
 def check_calibre_site(site):
-    ret={}
-    ret['uuid']=site["uuid"]
+    ret = {'uuid': site["uuid"]}
     now=str(datetime.datetime.now())
     ret['last_check']=now 
 
@@ -93,17 +92,14 @@ def check_calibre_site(site):
     print()
     print("Getting ebooks count:", site['url'])
     print(url)
-    
+
     try:
         r=requests.get(url, verify=False, timeout=(timeout, 30))
         r.raise_for_status()
     except requests.exceptions.HTTPError as e:
         r.status_code
         ret['error']=r.status_code
-        if (r.status_code == 401):
-            ret['status']="unauthorized"
-        else:
-            ret['status']="down"
+        ret['status'] = "unauthorized" if (r.status_code == 401) else "down"
         return ret
     except requests.RequestException as e: 
         print("Unable to open site:", url)
@@ -124,7 +120,7 @@ def check_calibre_site(site):
 
     print("Total count=",r.json()["total_num"])
 
-    ret['type']="calibre-server"    
+    ret['type']="calibre-server"
     status=ret['status']='online'
     if status=="online":
         ret['last_online']=now 
@@ -242,7 +238,7 @@ def check_calibre_list(dir='.'):
 
 def map_site_from_shodan_api(site):
     ret={}
-    if not 'http' in site:
+    if 'http' not in site:
         return
     # if 'calibre ' in site['http']['server']:
     #     return
